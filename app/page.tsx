@@ -65,7 +65,9 @@ interface IndicatorsResponse {
 }
 
 async function fetchData() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
   const [regimeRes, indicatorsRes] = await Promise.all([
     fetch(`${baseUrl}/api/regime`, { cache: "no-store" }),

@@ -4,7 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LargeChart } from "@/components/LargeChart";
 
 async function fetchAllIndicators() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
   const res = await fetch(`${baseUrl}/api/indicators/all`, {
     cache: "no-store",

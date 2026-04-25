@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { MiniChart } from "@/components/MiniChart";
 
 type Period = "now" | "week1" | "month1" | "month3";
 
@@ -21,17 +22,24 @@ interface IndicatorCardsProps {
   vix: {
     value: number;
     changePercent: number;
+    history: { date: string; close: number }[];
     compare: CompareSet;
   };
   sp500: {
     value: number;
     ma200Deviation: number | null;
+    history: { date: string; close: number }[];
     compare: CompareSet;
   };
-  treasury10y: { value: number };
+  treasury10y: {
+    value: number;
+    history: { date: string; value: number }[];
+    compare: CompareSet;
+  };
   fearGreed: {
     value: number;
     classificationJa: string;
+    history: { date: string; value: number }[];
     compare: CompareSet;
   };
 }
@@ -60,7 +68,7 @@ export function IndicatorCards({
 
   function renderChange(compare: CompareData | null, isPercent: boolean = false) {
     if (compare === null) {
-      return <p className="text-xs mt-1 text-slate-400 font-mono">データなし</p>;
+      return <p className="text-xs mt-1 text-slate-400">— 比較データなし</p>;
     }
 
     const isPositive = compare.changePercent >= 0;
@@ -79,8 +87,19 @@ export function IndicatorCards({
     );
   }
 
+  const vixChartData = vix.history.map((h) => ({
+    date: h.date,
+    value: h.close,
+  }));
+  const sp500ChartData = sp500.history.map((h) => ({
+    date: h.date,
+    value: h.close,
+  }));
+  const fearGreedChartData = fearGreed.history;
+
   const vixCompare = getCompareForPeriod(vix.compare);
   const sp500Compare = getCompareForPeriod(sp500.compare);
+  const treasury10yCompare = getCompareForPeriod(treasury10y.compare);
   const fearGreedCompare = getCompareForPeriod(fearGreed.compare);
 
   return (
@@ -106,9 +125,9 @@ export function IndicatorCards({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-white shadow-sm border border-slate-200">
-          <CardContent className="pt-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-white shadow-sm border border-slate-200 overflow-hidden">
+          <CardContent className="pt-6 pb-2">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
               VIX
             </p>
@@ -127,11 +146,14 @@ export function IndicatorCards({
             ) : (
               renderChange(vixCompare, true)
             )}
+            <div className="mt-3 -mx-2">
+              <MiniChart data={vixChartData} color="red" height={50} />
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white shadow-sm border border-slate-200">
-          <CardContent className="pt-6">
+        <Card className="bg-white shadow-sm border border-slate-200 overflow-hidden">
+          <CardContent className="pt-6 pb-2">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
               S&P 500
             </p>
@@ -149,11 +171,14 @@ export function IndicatorCards({
             ) : (
               renderChange(sp500Compare)
             )}
+            <div className="mt-3 -mx-2">
+              <MiniChart data={sp500ChartData} color="blue" height={50} />
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white shadow-sm border border-slate-200">
-          <CardContent className="pt-6">
+        <Card className="bg-white shadow-sm border border-slate-200 overflow-hidden">
+          <CardContent className="pt-6 pb-2">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
               10年金利
             </p>
@@ -161,16 +186,19 @@ export function IndicatorCards({
               {treasury10y.value.toFixed(2)}
               <span className="text-lg ml-1 text-slate-500">%</span>
             </p>
-            {period !== "now" && (
-              <p className="text-xs mt-1 text-slate-400">
-                月次データ（比較なし）
-              </p>
+            {period === "now" ? (
+              <p className="text-xs mt-1 text-slate-400">最新値</p>
+            ) : (
+              renderChange(treasury10yCompare, true)
             )}
+            <div className="mt-3 -mx-2">
+              <MiniChart data={treasury10y.history} color="amber" height={50} />
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white shadow-sm border border-slate-200">
-          <CardContent className="pt-6">
+        <Card className="bg-white shadow-sm border border-slate-200 overflow-hidden">
+          <CardContent className="pt-6 pb-2">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
               Fear & Greed
             </p>
@@ -184,6 +212,13 @@ export function IndicatorCards({
             ) : (
               renderChange(fearGreedCompare)
             )}
+            <div className="mt-3 -mx-2">
+              <MiniChart
+                data={fearGreedChartData}
+                color="purple"
+                height={50}
+              />
+            </div>
           </CardContent>
         </Card>
       </div>

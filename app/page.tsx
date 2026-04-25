@@ -1,4 +1,5 @@
 import { Compass } from "lucide-react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,16 +38,27 @@ interface RegimeResponse {
 
 interface IndicatorsResponse {
   indicators: {
-    vix: { value: number; changePercent: number; compare: CompareSet };
+    vix: {
+      value: number;
+      changePercent: number;
+      history: { date: string; close: number }[];
+      compare: CompareSet;
+    };
     sp500: {
       value: number;
       ma200Deviation: number | null;
+      history: { date: string; close: number }[];
       compare: CompareSet;
     };
-    treasury10y: { value: number };
+    treasury10y: {
+      value: number;
+      history: { date: string; value: number }[];
+      compare: CompareSet;
+    };
     fearGreed: {
       value: number;
       classificationJa: string;
+      history: { date: string; value: number }[];
       compare: CompareSet;
     };
   };
@@ -138,13 +150,12 @@ export default async function Home() {
               <button className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md">
                 Dashboard
               </button>
-              <button
-                disabled
-                className="px-4 py-2 text-sm font-medium text-slate-400 cursor-not-allowed"
-                title="準備中"
+              <Link
+                href="/markets"
+                className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700"
               >
                 Markets
-              </button>
+              </Link>
               <button
                 disabled
                 className="px-4 py-2 text-sm font-medium text-slate-400 cursor-not-allowed"

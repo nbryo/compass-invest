@@ -64,7 +64,7 @@ export async function getFearGreed(): Promise<FearGreedData> {
 
   // 過去30日分を抽出
   const history = historical
-    .slice(-30)
+    .slice(-90)
     .map((item: { x: number; y: number }) => ({
       date: new Date(item.x).toISOString().split("T")[0],
       value: Math.round(item.y),

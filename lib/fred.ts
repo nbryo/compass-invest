@@ -60,3 +60,49 @@ export async function getFredLatest(seriesId: string): Promise<{
     date: latestValid.date,
   };
 }
+
+/**
+ * FREDから過去N日分の履歴を取得する（古い順）
+ * @param seriesId - FRED series ID
+ * @param days - カレンダー日数（営業日換算で内部計算）
+ */
+export async function getFredHistory(
+  seriesId: string,
+  days: number
+): Promise<{ date: string; value: number }[]> {
+  const apiKey = process.env.FRED_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("FRED_API_KEY is not set in environment variables");
+  }
+
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - Math.ceil(days * 1.5));
+
+  const url = new URL(FRED_BASE_URL);
+  url.searchParams.set("series_id", seriesId);
+  url.searchParams.set("api_key", apiKey);
+  url.searchParams.set("file_type", "json");
+  url.searchParams.set("sort_order", "asc");
+  url.searchParams.set(
+    "observation_start",
+    startDate.toISOString().split("T")[0]
+  );
+  url.searchParams.set(
+    "observation_end",
+    endDate.toISOString().split("T")[0]
+  );
+
+  const response = await fetch(url.toString());
+
+  if (!response.ok) {
+    throw new Error(`FRED API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data: FredResponse = await response.json();
+
+  return data.observations
+    .filter((obs) => obs.value !== ".")
+    .map((obs) => ({ date: obs.date, value: parseFloat(obs.value) }));
+}

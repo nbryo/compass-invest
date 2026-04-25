@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getFredLatest } from "@/lib/fred";
+import { getFredLatest, getFredHistory } from "@/lib/fred";
 import { getQuote, getHistorical } from "@/lib/yahoo";
 import { getFearGreed, classifyFearGreedJa } from "@/lib/feargreed";
 
@@ -36,7 +36,9 @@ export async function GET() {
   try {
     const [
       treasury10y,
+      treasury10yHistory,
       treasury2y,
+      treasury2yHistory,
       fedfunds,
       vixQuote,
       vixHistory,
@@ -45,7 +47,9 @@ export async function GET() {
       fearGreed,
     ] = await Promise.all([
       getFredLatest("DGS10"),
+      getFredHistory("DGS10", 100),
       getFredLatest("DGS2"),
+      getFredHistory("DGS2", 100),
       getFredLatest("FEDFUNDS"),
       getQuote("^VIX"),
       getHistorical("^VIX", 100),
@@ -99,6 +103,36 @@ export async function GET() {
       ),
     };
 
+    const treasury10yCompare = {
+      week1: calculateChange(
+        treasury10y.value,
+        getValueDaysAgo(treasury10yHistory, 7, "value")
+      ),
+      month1: calculateChange(
+        treasury10y.value,
+        getValueDaysAgo(treasury10yHistory, 30, "value")
+      ),
+      month3: calculateChange(
+        treasury10y.value,
+        getValueDaysAgo(treasury10yHistory, 90, "value")
+      ),
+    };
+
+    const treasury2yCompare = {
+      week1: calculateChange(
+        treasury2y.value,
+        getValueDaysAgo(treasury2yHistory, 7, "value")
+      ),
+      month1: calculateChange(
+        treasury2y.value,
+        getValueDaysAgo(treasury2yHistory, 30, "value")
+      ),
+      month3: calculateChange(
+        treasury2y.value,
+        getValueDaysAgo(treasury2yHistory, 90, "value")
+      ),
+    };
+
     const fearGreedCompare = {
       week1: calculateChange(
         fearGreed.value,
@@ -108,8 +142,10 @@ export async function GET() {
         fearGreed.value,
         getValueDaysAgo(fearGreed.history, 30, "value")
       ),
-      // Fear & Greedは30日分しか取得してないので3ヶ月は無し
-      month3: null,
+      month3: calculateChange(
+        fearGreed.value,
+        getValueDaysAgo(fearGreed.history, 90, "value")
+      ),
     };
 
     return NextResponse.json({
@@ -120,12 +156,15 @@ export async function GET() {
           value: treasury10y.value,
           date: treasury10y.date,
           unit: "%",
+          history: treasury10yHistory.slice(-30),
+          compare: treasury10yCompare,
         },
         treasury2y: {
           name: "2年米国債金利",
           value: treasury2y.value,
           date: treasury2y.date,
           unit: "%",
+          compare: treasury2yCompare,
         },
         fedfunds: {
           name: "FF金利",

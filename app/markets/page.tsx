@@ -203,12 +203,12 @@ export default async function MarketsPage() {
               <button className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md">
                 Markets
               </button>
-              <button
-                disabled
-                className="px-4 py-2 text-sm font-medium text-slate-400 cursor-not-allowed"
+              <Link
+                href="/history"
+                className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700"
               >
                 History
-              </button>
+              </Link>
             </div>
 
             <Link

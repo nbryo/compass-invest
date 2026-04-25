@@ -156,13 +156,12 @@ export default async function Home() {
               >
                 Markets
               </Link>
-              <button
-                disabled
-                className="px-4 py-2 text-sm font-medium text-slate-400 cursor-not-allowed"
-                title="準備中"
+              <Link
+                href="/history"
+                className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700"
               >
                 History
-              </button>
+              </Link>
             </div>
 
             <div className="text-right hidden sm:block">

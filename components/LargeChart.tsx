@@ -98,7 +98,7 @@ export function LargeChart({
             padding: "8px 12px",
           }}
           labelStyle={{ color: "#64748b", fontSize: "11px", marginBottom: "4px" }}
-          formatter={(value: number) => [value.toFixed(2), ""]}
+          formatter={(value) => [Number(value).toFixed(2), ""]}
           labelFormatter={(label) => label}
         />
         <Area

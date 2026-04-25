@@ -61,7 +61,7 @@ export function MiniChart({ data, color, height = 60 }: MiniChartProps) {
             padding: "4px 8px",
           }}
           labelStyle={{ color: "#64748b", fontSize: "10px" }}
-          formatter={(value: number) => [value.toFixed(2), ""]}
+          formatter={(value) => [Number(value).toFixed(2), ""]}
           labelFormatter={(label) => label}
         />
         <Area

@@ -4,12 +4,36 @@ import { getQuote, getHistorical } from "@/lib/yahoo";
 import { getFearGreed, classifyFearGreedJa } from "@/lib/feargreed";
 
 /**
- * GET /api/indicators/all
- * レジーム分析に必要な全指標を一度に取得
+ * 配列から「N日前の値」を取得する
  */
+function getValueDaysAgo<T extends { date: string }>(
+  history: T[],
+  daysAgo: number,
+  valueKey: keyof T
+): number | null {
+  if (history.length === 0) return null;
+
+  // 営業日換算で索引を計算（土日除いて約5/7）
+  const businessDaysAgo = Math.floor(daysAgo * (5 / 7));
+  const index = history.length - 1 - businessDaysAgo;
+
+  if (index < 0) return null;
+
+  const value = history[index][valueKey];
+  return typeof value === "number" ? value : null;
+}
+
+function calculateChange(current: number, past: number | null) {
+  if (past === null || past === 0) return null;
+  return {
+    past,
+    change: current - past,
+    changePercent: ((current - past) / past) * 100,
+  };
+}
+
 export async function GET() {
   try {
-    // 全データを並列取得（速度のため）
     const [
       treasury10y,
       treasury2y,
@@ -24,13 +48,12 @@ export async function GET() {
       getFredLatest("DGS2"),
       getFredLatest("FEDFUNDS"),
       getQuote("^VIX"),
-      getHistorical("^VIX", 30),
+      getHistorical("^VIX", 100),
       getQuote("^GSPC"),
       getHistorical("^GSPC", 250),
       getFearGreed(),
     ]);
 
-    // S&P500の移動平均計算
     const sp500Closes = sp500History.map((h) => h.close);
     const ma50 =
       sp500Closes.length >= 50
@@ -44,8 +67,50 @@ export async function GET() {
       ? ((sp500Quote.price - ma200) / ma200) * 100
       : null;
 
-    // イールドカーブ（10年-2年スプレッド）
     const yieldSpread = treasury10y.value - treasury2y.value;
+
+    const vixCompare = {
+      week1: calculateChange(
+        vixQuote.price,
+        getValueDaysAgo(vixHistory, 7, "close")
+      ),
+      month1: calculateChange(
+        vixQuote.price,
+        getValueDaysAgo(vixHistory, 30, "close")
+      ),
+      month3: calculateChange(
+        vixQuote.price,
+        getValueDaysAgo(vixHistory, 90, "close")
+      ),
+    };
+
+    const sp500Compare = {
+      week1: calculateChange(
+        sp500Quote.price,
+        getValueDaysAgo(sp500History, 7, "close")
+      ),
+      month1: calculateChange(
+        sp500Quote.price,
+        getValueDaysAgo(sp500History, 30, "close")
+      ),
+      month3: calculateChange(
+        sp500Quote.price,
+        getValueDaysAgo(sp500History, 90, "close")
+      ),
+    };
+
+    const fearGreedCompare = {
+      week1: calculateChange(
+        fearGreed.value,
+        getValueDaysAgo(fearGreed.history, 7, "value")
+      ),
+      month1: calculateChange(
+        fearGreed.value,
+        getValueDaysAgo(fearGreed.history, 30, "value")
+      ),
+      // Fear & Greedは30日分しか取得してないので3ヶ月は無し
+      month3: null,
+    };
 
     return NextResponse.json({
       timestamp: new Date().toISOString(),
@@ -80,7 +145,8 @@ export async function GET() {
           change: vixQuote.change,
           changePercent: vixQuote.changePercent,
           date: vixQuote.date,
-          history: vixHistory,
+          history: vixHistory.slice(-30),
+          compare: vixCompare,
         },
         sp500: {
           name: "S&P 500",
@@ -92,6 +158,7 @@ export async function GET() {
           ma200,
           ma200Deviation,
           history: sp500History.slice(-30),
+          compare: sp500Compare,
         },
         fearGreed: {
           name: "Fear & Greed Index",
@@ -100,6 +167,7 @@ export async function GET() {
           classificationJa: classifyFearGreedJa(fearGreed.value),
           date: fearGreed.date,
           history: fearGreed.history,
+          compare: fearGreedCompare,
         },
       },
     });

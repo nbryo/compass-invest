@@ -2,22 +2,7 @@ import { Compass, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { LargeChart } from "@/components/LargeChart";
-
-async function fetchAllIndicators() {
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
-  const res = await fetch(`${baseUrl}/api/indicators/all`, {
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch indicators");
-  }
-
-  return res.json();
-}
+import { getAllIndicators } from "@/lib/indicators";
 
 function getStatistics(data: { value: number }[]) {
   if (!data || data.length === 0) {
@@ -160,7 +145,7 @@ function MarketCard({
 }
 
 export default async function MarketsPage() {
-  const data = await fetchAllIndicators();
+  const data = await getAllIndicators();
   const indicators = data.indicators;
 
   const vixHistory = (indicators.vix.history || []).map(

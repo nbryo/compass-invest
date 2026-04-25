@@ -4,83 +4,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IndicatorCards } from "@/components/IndicatorCards";
-
-interface CompareData {
-  past: number;
-  change: number;
-  changePercent: number;
-}
-
-interface CompareSet {
-  week1: CompareData | null;
-  month1: CompareData | null;
-  month3: CompareData | null;
-}
-
-interface RegimeResponse {
-  regime: {
-    type: string;
-    nameJa: string;
-    nameEn: string;
-    description: string;
-    characteristics: string[];
-    favorableAssets: string[];
-  };
-  confidence: number;
-  alertLevel: "low" | "medium" | "high" | "critical";
-  reasoning: string[];
-  axes: {
-    monetary: string;
-    economy: string;
-  };
-  timestamp: string;
-}
-
-interface IndicatorsResponse {
-  indicators: {
-    vix: {
-      value: number;
-      changePercent: number;
-      history: { date: string; close: number }[];
-      compare: CompareSet;
-    };
-    sp500: {
-      value: number;
-      ma200Deviation: number | null;
-      history: { date: string; close: number }[];
-      compare: CompareSet;
-    };
-    treasury10y: {
-      value: number;
-      history: { date: string; value: number }[];
-      compare: CompareSet;
-    };
-    fearGreed: {
-      value: number;
-      classificationJa: string;
-      history: { date: string; value: number }[];
-      compare: CompareSet;
-    };
-  };
-}
+import { getAllIndicators } from "@/lib/indicators";
+import { analyzeFromIndicators } from "@/lib/regime-helper";
 
 async function fetchData() {
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
-  const [regimeRes, indicatorsRes] = await Promise.all([
-    fetch(`${baseUrl}/api/regime`, { cache: "no-store" }),
-    fetch(`${baseUrl}/api/indicators/all`, { cache: "no-store" }),
-  ]);
-
-  if (!regimeRes.ok || !indicatorsRes.ok) {
-    throw new Error("Failed to fetch data");
-  }
-
-  const regime: RegimeResponse = await regimeRes.json();
-  const indicators: IndicatorsResponse = await indicatorsRes.json();
-
+  const indicators = await getAllIndicators();
+  const regime = analyzeFromIndicators(indicators);
   return { regime, indicators };
 }
 
